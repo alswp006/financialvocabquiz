@@ -147,10 +147,16 @@ export interface WeeklyLeaderboardCacheV2 {
   main.tsx
   pages/
     Home.tsx
+    Quiz.ts
+    Quiz.tsx
     __TdsGallery.tsx
+    __cjsrepro.cts
+    __cjsrepro.ts
+    __plainrepro.cjs
   store/
     AppStore.ts
     AppStore.tsx
+    __plaindep.cjs
   styles/
     globals.css
     reward-ad.css
@@ -174,7 +180,7 @@ export interface WeeklyLeaderboardCacheV2 {
 - storage.ts: export function getItem<T>(key: string): T | null; export function setItem<T>(key: string, value: T): void; export function removeItem(key: string): void
 - time.ts: export function nowISO(): string; export function getLocalDateISO(now?: Date): string; export function getISOWeekId(date: Date): string
 - types.ts: export type ISODateTimeString = string; export type ISODateString = string; export type Difficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'; export interface EntityBase; export interface QuizQuestion extends EntityBase; export interface UserProgress extends EntityBase; export type DailyQuizSession = | (DailyQuizSessionBase &; export interface WrongAnswerItem extends EntityBase
-- utils.ts: export function cn(...classes: (string | boolean | undefined | null)[]): string; export function fo...
+- utils.t...
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
 
 ## Already Implemented (do NOT duplicate or overwrite)

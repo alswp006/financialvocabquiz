@@ -4,14 +4,13 @@ import { screen, fireEvent } from "@testing-library/react";
 import { mockTds, mockAppsInToss, mockTossRewardAd, mockRouter, mockNavigate } from "@/__tests__/__helpers__/mocks";
 import { renderWithRouter } from "@/__tests__/__helpers__/test-utils";
 import type { DailyQuizSession, QuizQuestion } from "@/lib/types";
-
-// NOTE: src/pages/Quiz.tsx does not exist yet (TDD red phase).
-// Use require() (not a static import) so `npx tsc --noEmit` doesn't fail on the
-// missing module before the Coder implements it — see packet-0004.test.ts for
-// the same convention with other not-yet-implemented modules.
-function getQuizComponent() {
-  return require("@/pages/Quiz").default;
-}
+// NOTE: static import (not require()) — this module's dependencies
+// (@/store/AppStore, @/lib/quizBank/index) are mocked below via vi.mock(),
+// and vi.mock() only intercepts the statically-analyzed ESM import graph.
+// require() bypasses Vitest's module runner entirely (loads the real,
+// unmocked modules), so it can't be used here despite the convention in
+// packet-0004.test.ts (that module doesn't need its own deps mocked).
+import QuizComponent from "@/pages/Quiz";
 
 /**
  * Packet 0009: 퀴즈(/quiz) 페이지 — 4지선다 진행 + 중복 탭 방지 + 문항 누락 에러 처리
@@ -120,7 +119,6 @@ function makeStoreState(overrides: Record<string, unknown> = {}) {
 }
 
 function renderQuiz() {
-  const QuizComponent = getQuizComponent();
   return renderWithRouter(
     React.createElement(QuizComponent),
     { initialEntries: [{ pathname: "/quiz", state: { difficulty: "BEGINNER" } }] },
@@ -173,7 +171,7 @@ describe("퀴즈(/quiz) 페이지: 4지선다 진행 + 중복 탭 방지 + 문�
       mockUseAppStore.mockReturnValue(
         makeStoreState({ currentSession: answeredSession, answerQuestion: mockAnswerQuestion }),
       );
-      rerender(React.createElement(getQuizComponent()));
+      rerender(React.createElement(QuizComponent));
 
       expect(screen.getByText("인플레이션이란 무엇인가요?")).toBeInTheDocument();
       expect(screen.getAllByTestId("quiz-choice")).toHaveLength(4);
@@ -249,9 +247,9 @@ describe("퀴즈(/quiz) 페이지: 4지선다 진행 + 중복 탭 방지 + 문�
 
       const { rerender } = renderQuiz();
       mockUseAppStore.mockReturnValue(makeStoreState({ currentSession: { ...completedSession } }));
-      rerender(React.createElement(getQuizComponent()));
+      rerender(React.createElement(QuizComponent));
       mockUseAppStore.mockReturnValue(makeStoreState({ currentSession: { ...completedSession } }));
-      rerender(React.createElement(getQuizComponent()));
+      rerender(React.createElement(QuizComponent));
 
       expect(mockNavigate).toHaveBeenCalledTimes(1);
       expect(mockNavigate).toHaveBeenCalledWith("/result", { state: { sessionId: "session-1" } });
