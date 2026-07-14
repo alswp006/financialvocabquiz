@@ -172,3 +172,4 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 ## Already Implemented (do NOT duplicate or overwrite)
 - 0001: v2 스키마 TypeScript 타입 + RouteState 계약 고정 (files: src/lib/types.ts)
 - 0002: 시간/ID 유틸 + 퀴즈뱅크 런타임 인덱스 + 세션 생성(결정적 3문항) (files: src/lib/time.ts, src/lib/id.ts, src/lib/quizBank/index.ts, src/lib/quiz/sessionFactory.ts)
+- 0005: API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결과 모델 (files: src/lib/api/http.ts)
