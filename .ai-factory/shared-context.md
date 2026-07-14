@@ -192,3 +192,4 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0006: 리더보드 API 클라이언트(leaderboard.ts): GET 주간조회 + POST 제출 (files: src/lib/api/leaderboard.ts)
 - 0004: AppStore(Context): 부트스트랩/복구 감지 + 오늘 세션 시작/답안 기록/완료 처리 (files: src/store/AppStore.tsx)
 - 0008: 홈(/) 페이지: 난이도 선택 + 시작 로딩 + 문제 부족 차단 + 복구 다이얼로그 (files: src/pages/Home.tsx)
+- 0009: 퀴즈(/quiz) 페이지: 4지선다 진행 + 중복 탭 방지 + 문항 누락 에러 처리 (files: src/pages/Quiz.tsx)
