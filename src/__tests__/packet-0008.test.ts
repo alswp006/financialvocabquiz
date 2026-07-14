@@ -4,6 +4,7 @@ import { screen, fireEvent } from "@testing-library/react";
 import { mockTds, mockAppsInToss, mockTossRewardAd, mockRouter, mockNavigate } from "@/__tests__/__helpers__/mocks";
 import { renderWithRouter } from "@/__tests__/__helpers__/test-utils";
 import type { UserProgress } from "@/lib/types";
+import HomeComponent from "@/pages/Home";
 
 /**
  * Packet 0008: 홈(/) 페이지 — 난이도 선택 + 시작 로딩 + 문제 부족 차단 + 복구 다이얼로그
@@ -57,7 +58,7 @@ function makeUserProgress(): UserProgress {
   };
 }
 
-function makeStoreState(overrides: Partial<ReturnType<typeof makeStoreState>> = {}) {
+function makeStoreState(overrides: Record<string, unknown> = {}) {
   return {
     userProgress: makeUserProgress(),
     needsRecoveryDialog: false,
@@ -69,8 +70,8 @@ function makeStoreState(overrides: Partial<ReturnType<typeof makeStoreState>> = 
   };
 }
 
-// Import Home AFTER mocks are registered (module not implemented yet — TDD red phase).
-const Home = () => require("@/pages/Home").default;
+// Home is now implemented — static import works since vi.mock calls above are hoisted.
+const Home = () => HomeComponent;
 
 describe("홈(/) 페이지: 난이도 선택 + 시작 로딩 + 문제 부족 차단 + 복구 다이얼로그", () => {
   beforeEach(() => {

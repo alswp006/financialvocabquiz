@@ -140,6 +140,26 @@ export function mockTds() {
     BottomCTA: ({ children }: any) =>
       React.createElement("div", { "data-slot": "bottom-cta" }, children),
 
+    // FixedBottomCTA IS a <button> itself (.d.ts: HTMLButtonElement ref) — children
+    // are the label directly, never a nested <Button> (see CLAUDE.md button-nesting rule).
+    FixedBottomCTA: Object.assign(
+      ({ children, onClick, disabled, ...props }: any) =>
+        React.createElement(
+          "button",
+          { onClick, disabled, "data-slot": "fixed-bottom-cta", ...props },
+          children,
+        ),
+      {
+        Double: ({ left, right }: any) =>
+          React.createElement(
+            "div",
+            { "data-slot": "fixed-bottom-cta-double" },
+            left,
+            right,
+          ),
+      },
+    ),
+
     BottomSheet: Object.assign(
       ({ children, open }: any) =>
         open ? React.createElement("div", { role: "dialog" }, children) : null,

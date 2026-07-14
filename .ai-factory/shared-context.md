@@ -148,6 +148,9 @@ export interface WeeklyLeaderboardCacheV2 {
   pages/
     Home.tsx
     __TdsGallery.tsx
+  store/
+    AppStore.ts
+    AppStore.tsx
   styles/
     globals.css
     reward-ad.css
@@ -171,7 +174,7 @@ export interface WeeklyLeaderboardCacheV2 {
 - storage.ts: export function getItem<T>(key: string): T | null; export function setItem<T>(key: string, value: T): void; export function removeItem(key: string): void
 - time.ts: export function nowISO(): string; export function getLocalDateISO(now?: Date): string; export function getISOWeekId(date: Date): string
 - types.ts: export type ISODateTimeString = string; export type ISODateString = string; export type Difficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'; export interface EntityBase; export interface QuizQuestion extends EntityBase; export interface UserProgress extends EntityBase; export type DailyQuizSession = | (DailyQuizSessionBase &; export interface WrongAnswerItem extends EntityBase
-- utils.ts: export function cn(...classes: (string | boolean | undefined | null)[]): string; export function formatNumber(n: number): string; export func...
+- utils.ts: export function cn(...classes: (string | boolean | undefined | null)[]): string; export function fo...
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
 
 ## Already Implemented (do NOT duplicate or overwrite)
@@ -181,3 +184,4 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0007: VirtualList 공용 컴포넌트(react-window) + 50+ 목록 가상 스크롤 기반 (files: src/components/VirtualList.tsx)
 - 0003: localStorage v2 저장소: safeStorage + UserProgress/DailySessions/WrongAnswers/LeaderboardCache CRUD (files: src/lib/storage/safeStorage.ts, src/lib/storage/userProgress.ts, src/lib/storage/dailySessions.ts, src/lib/storage/wrongAnswers.ts, src/lib/storage/leaderboardCache.ts)
 - 0006: 리더보드 API 클라이언트(leaderboard.ts): GET 주간조회 + POST 제출 (files: src/lib/api/leaderboard.ts)
+- 0004: AppStore(Context): 부트스트랩/복구 감지 + 오늘 세션 시작/답안 기록/완료 처리 (files: src/store/AppStore.tsx)

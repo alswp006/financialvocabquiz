@@ -26,7 +26,15 @@ const originalResolveFilename = (Module as unknown as { _resolveFilename: Functi
 ) {
   if (request.startsWith("@/")) {
     const resolved = path.resolve(process.cwd(), "src", request.slice(2));
-    return originalResolveFilename.call(this, `${resolved}.ts`, ...rest);
+    let lastError: unknown;
+    for (const suffix of [".ts", ".tsx"]) {
+      try {
+        return originalResolveFilename.call(this, `${resolved}${suffix}`, ...rest);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError;
   }
   return originalResolveFilename.call(this, request, ...rest);
 };
