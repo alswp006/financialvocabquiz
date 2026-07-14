@@ -18,6 +18,15 @@ import { vi } from "vitest";
 export const mockNavigate = vi.fn();
 export const mockLocation = { pathname: "/", search: "", state: null, key: "default" };
 
+// Vitest hoists EVERY `vi.mock(...)` call found anywhere in a file (even nested
+// inside a function body) to the top of that file's module — so merely importing
+// this helper file always registers the "react-router-dom" mock below, regardless
+// of whether `mockRouter()` is ever called. To keep `mockRouter()` a genuine opt-in,
+// the mock itself is unconditional but its useLocation behavior is driven by this
+// mutable flag, checked lazily at call time (i.e. at component render time, which
+// always happens after any top-level `mockRouter()` call in the consuming test file).
+const routerMockState = { useStaticLocation: false };
+
 // ── TDS (@toss/tds-mobile) ──
 // TDS components use CSS-in-JS + layout hooks that crash in jsdom.
 // Replace with lightweight DOM stand-ins that preserve prop-based testing.
@@ -304,8 +313,17 @@ export function mockAppsInToss() {
 // ── Toss Reward Ad Component ──
 // TossRewardAd is a project-local component that wraps content behind ad viewing.
 // In tests, render the children directly (ad always "watched").
+//
+// Uses vi.doMock (NOT vi.mock) deliberately: vi.mock calls are hoisted to the top
+// of whichever file they're textually written in — even nested inside a function —
+// so a plain vi.mock here would register unconditionally for every test file that
+// merely imports this helper, regardless of whether mockTossRewardAd() is called
+// (see the react-router-dom mock above, which hit exactly this bug). vi.doMock is
+// NOT hoisted, so it only takes effect when this function actually runs. Tests that
+// need a different/custom "@/components/TossRewardAd" mock (e.g. a deterministic
+// success/fail gate) can define their own vi.mock without this helper clobbering it.
 export function mockTossRewardAd() {
-  vi.mock("@/components/TossRewardAd", () => ({
+  vi.doMock("@/components/TossRewardAd", () => ({
     TossRewardAd: ({ children, onReward }: any) => {
       // Auto-trigger onReward in tests to unlock content
       if (onReward) setTimeout(onReward, 0);
@@ -316,18 +334,24 @@ export function mockTossRewardAd() {
 }
 
 // ── react-router-dom ──
-// Preserve actual router + override useNavigate for assertion.
+// Preserve actual router + override useNavigate for assertion. This vi.mock call is
+// ALWAYS registered (see routerMockState comment above) — useLocation only returns
+// the static mockLocation once mockRouter() has flipped routerMockState.useStaticLocation.
+// Tests that need real location/state (e.g. RouteState via MemoryRouter initialEntries)
+// simply never call mockRouter() and get the actual useLocation() by default.
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-router-dom")>(
+    "react-router-dom",
+  );
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useLocation: () => (routerMockState.useStaticLocation ? mockLocation : actual.useLocation()),
+  };
+});
+
 export function mockRouter() {
-  vi.mock("react-router-dom", async () => {
-    const actual = await vi.importActual<typeof import("react-router-dom")>(
-      "react-router-dom",
-    );
-    return {
-      ...actual,
-      useNavigate: () => mockNavigate,
-      useLocation: () => mockLocation,
-    };
-  });
+  routerMockState.useStaticLocation = true;
 }
 
 // ── Convenience: mock everything ──

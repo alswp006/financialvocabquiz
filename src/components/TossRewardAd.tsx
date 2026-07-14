@@ -17,6 +17,8 @@ interface TossRewardAdProps {
   buttonText?: string;
   /** 광고 시청 완료 콜백 */
   onRewarded?: () => void;
+  /** 광고 시청 실패/취소 콜백 (시청 시도 중 실패했거나 완료 없이 닫음 — 게이트는 계속 잠긴 상태 유지) */
+  onWatchFailed?: () => void;
   /** 광고 로드 타임아웃 (ms). 초과 시 자동 언락 */
   timeoutMs?: number;
 }
@@ -41,6 +43,7 @@ export function TossRewardAd({
   description = "광고를 시청하면 결과를 확인할 수 있어요",
   buttonText = "광고 보고 확인하기",
   onRewarded,
+  onWatchFailed,
   timeoutMs = 15000,
 }: TossRewardAdProps) {
   const [unlocked, setUnlocked] = useState(false);
@@ -79,10 +82,11 @@ export function TossRewardAd({
   const handleWatch = () => {
     setIsShowing(true);
 
-    // Timeout fallback
+    // Timeout fallback — ad hung with no completion/error event. Keep gated
+    // (matches policy: only an actual reward unlocks) but re-enable the button.
     timeoutRef.current = setTimeout(() => {
-      setUnlocked(true);
-      onRewarded?.();
+      setIsShowing(false);
+      onWatchFailed?.();
     }, timeoutMs);
 
     try {
@@ -90,31 +94,27 @@ export function TossRewardAd({
         slotId,
         onEvent: (event: { type?: string }) => {
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          // event.type === 'rewarded' indicates completion (SDK version-dependent)
-          // For safety, unlock on any event that finishes the ad
-          setUnlocked(true);
           setIsShowing(false);
           if (event?.type === "rewarded" || event?.type === "completed") {
+            setUnlocked(true);
             onRewarded?.();
           } else {
-            // dismissed or other — still unlock for UX (policy: gate only final payoff)
-            onRewarded?.();
+            // dismissed without completing — stay gated
+            onWatchFailed?.();
           }
         },
         onError: () => {
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          // Playback failed — unlock as fallback
-          setUnlocked(true);
+          // Playback failed — stay gated
           setIsShowing(false);
-          onRewarded?.();
+          onWatchFailed?.();
         },
       } as Parameters<typeof showFullScreenAd>[0]);
     } catch {
-      // SDK call threw — unlock
+      // SDK call threw — stay gated
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      setUnlocked(true);
       setIsShowing(false);
-      onRewarded?.();
+      onWatchFailed?.();
     }
   };
 
