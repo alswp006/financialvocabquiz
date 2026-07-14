@@ -1,13 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { httpGetJSON, httpPostJSON } from "@/lib/api/http";
 
 // Mock global fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-// Placeholder for the actual implementation — tests define the contract
-// import { httpGetJSON, httpPostJSON } from "@/lib/api/http";
-
-// These tests will fail until http.ts is implemented
 describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결과 모델", () => {
   beforeEach(() => {
     mockFetch.mockClear();
@@ -29,14 +26,10 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // Simulated implementation call (will fail until http.ts exists)
-      // const result = await httpGetJSON("https://api.example.com/user");
-      // expect(result.ok).toBe(true);
-      // expect(result.status).toBe(200);
-      // expect(result.data).toEqual(responseBody);
-
-      // Placeholder test structure
-      expect(mockFetch).not.toHaveBeenCalled(); // Will be called after implementation
+      const result = await httpGetJSON("https://api.example.com/user");
+      expect(result.ok).toBe(true);
+      expect(result.status).toBe(200);
+      expect(result.ok && result.data).toEqual(responseBody);
     });
 
     it("AC-1[P0]: httpGetJSON returns {ok: false, status: 401, error: 'HTTP_ERROR'} on 401 response", async () => {
@@ -47,13 +40,11 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON("https://api.example.com/protected");
-      // expect(result.ok).toBe(false);
-      // expect(result.status).toBe(401);
-      // expect(result.error).toBe("HTTP_ERROR");
-      // expect(result.data).toBeUndefined();
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpGetJSON("https://api.example.com/protected");
+      expect(result.ok).toBe(false);
+      expect(result.status).toBe(401);
+      expect(!result.ok && result.error).toBe("HTTP_ERROR");
+      expect((result as { data?: unknown }).data).toBeUndefined();
     });
 
     it("AC-1[P0]: httpGetJSON returns {ok: false, status: 500, error: 'HTTP_ERROR'} on server error", async () => {
@@ -64,23 +55,19 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON("https://api.example.com/data");
-      // expect(result.ok).toBe(false);
-      // expect(result.status).toBe(500);
-      // expect(result.error).toBe("HTTP_ERROR");
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpGetJSON("https://api.example.com/data");
+      expect(result.ok).toBe(false);
+      expect(result.status).toBe(500);
+      expect(!result.ok && result.error).toBe("HTTP_ERROR");
     });
 
     it("AC-1[P0]: httpGetJSON returns {ok: false, error: 'NETWORK_ERROR'} on network failure", async () => {
       mockFetch.mockRejectedValueOnce(new Error("Network timeout"));
 
-      // const result = await httpGetJSON("https://api.example.com/data");
-      // expect(result.ok).toBe(false);
-      // expect(result.error).toBe("NETWORK_ERROR");
-      // expect(result.status).toBeUndefined();
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpGetJSON("https://api.example.com/data");
+      expect(result.ok).toBe(false);
+      expect(!result.ok && result.error).toBe("NETWORK_ERROR");
+      expect(result.status).toBeUndefined();
     });
   });
 
@@ -94,12 +81,10 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON("https://api.example.com/data");
-      // expect(result.ok).toBe(false);
-      // expect(result.error).toBe("PARSE_ERROR");
-      // expect(result.data).toBeUndefined();
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpGetJSON("https://api.example.com/data");
+      expect(result.ok).toBe(false);
+      expect(!result.ok && result.error).toBe("PARSE_ERROR");
+      expect((result as { data?: unknown }).data).toBeUndefined();
     });
 
     it("AC-2[P0]: httpGetJSON returns {ok: false, error: 'PARSE_ERROR'} on malformed JSON response", async () => {
@@ -110,11 +95,9 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON("https://api.example.com/data");
-      // expect(result.ok).toBe(false);
-      // expect(result.error).toBe("PARSE_ERROR");
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpGetJSON("https://api.example.com/data");
+      expect(result.ok).toBe(false);
+      expect(!result.ok && result.error).toBe("PARSE_ERROR");
     });
 
     it("AC-2[P0]: httpGetJSON does not console.error on parse failure", async () => {
@@ -127,12 +110,10 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON("https://api.example.com/data");
-      // Verify no console.error was called
-      // expect(consoleErrorSpy).not.toHaveBeenCalled();
+      await httpGetJSON("https://api.example.com/data");
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();
-      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 
@@ -150,13 +131,11 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON("https://api.example.com/items");
-      // expect(result.ok).toBe(true);
-      // expect(result.headers).toBeDefined();
-      // expect(result.headers.get("x-has-next")).toBe("true");
-      // expect(result.headers.get("x-next-cursor")).toBe("cursor-abc123");
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpGetJSON("https://api.example.com/items");
+      expect(result.ok).toBe(true);
+      expect(result.headers).toBeDefined();
+      expect(result.headers?.get("x-has-next")).toBe("true");
+      expect(result.headers?.get("x-next-cursor")).toBe("cursor-abc123");
     });
 
     it("AC-3[P0]: httpGetJSON does not use mode: 'no-cors' in fetch options", async () => {
@@ -167,12 +146,9 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON("https://api.example.com/data");
-      // Verify fetch was called without mode: 'no-cors'
-      // const fetchCall = mockFetch.mock.calls[0];
-      // expect(fetchCall[1]?.mode).not.toBe("no-cors");
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      await httpGetJSON("https://api.example.com/data");
+      const fetchCall = mockFetch.mock.calls[0];
+      expect((fetchCall[1] as RequestInit)?.mode).not.toBe("no-cors");
     });
   });
 
@@ -189,15 +165,10 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpPostJSON(
-      //   "https://api.example.com/users",
-      //   requestBody
-      // );
-      // expect(result.ok).toBe(true);
-      // expect(result.status).toBe(201);
-      // expect(result.data).toEqual(responseBody);
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpPostJSON("https://api.example.com/users", requestBody);
+      expect(result.ok).toBe(true);
+      expect(result.status).toBe(201);
+      expect(result.ok && result.data).toEqual(responseBody);
     });
 
     it("httpPostJSON returns {ok: false, status: 400, error: 'HTTP_ERROR'} on validation error", async () => {
@@ -208,15 +179,10 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpPostJSON(
-      //   "https://api.example.com/users",
-      //   { email: "invalid" }
-      // );
-      // expect(result.ok).toBe(false);
-      // expect(result.status).toBe(400);
-      // expect(result.error).toBe("HTTP_ERROR");
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpPostJSON("https://api.example.com/users", { email: "invalid" });
+      expect(result.ok).toBe(false);
+      expect(result.status).toBe(400);
+      expect(!result.ok && result.error).toBe("HTTP_ERROR");
     });
 
     it("httpGetJSON handles 204 No Content (no body) gracefully", async () => {
@@ -227,12 +193,10 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON("https://api.example.com/delete-confirm");
-      // expect(result.ok).toBe(true);
-      // expect(result.status).toBe(204);
-      // expect(result.data).toBeNull(); // or undefined, depending on impl
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpGetJSON("https://api.example.com/delete-confirm");
+      expect(result.ok).toBe(true);
+      expect(result.status).toBe(204);
+      expect(result.ok && result.data).toBeNull();
     });
 
     it("httpGetJSON passes custom headers in request", async () => {
@@ -243,16 +207,13 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON(
-      //   "https://api.example.com/protected",
-      //   { headers: { Authorization: "Bearer token123" } }
-      // );
-      // expect(result.ok).toBe(true);
-      // Verify fetch was called with auth header
-      // const fetchCall = mockFetch.mock.calls[0];
-      // expect(fetchCall[1]?.headers?.Authorization).toBe("Bearer token123");
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpGetJSON("https://api.example.com/protected", {
+        headers: { Authorization: "Bearer token123" },
+      });
+      expect(result.ok).toBe(true);
+      const fetchCall = mockFetch.mock.calls[0];
+      const headers = (fetchCall[1] as RequestInit)?.headers as Record<string, string>;
+      expect(headers?.Authorization).toBe("Bearer token123");
     });
   });
 
@@ -266,12 +227,10 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpGetJSON("https://api.example.com/empty");
-      // expect(result.ok).toBe(true);
-      // expect(result.status).toBe(200);
-      // (data handling depends on impl: null, undefined, or error)
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      const result = await httpGetJSON("https://api.example.com/empty");
+      expect(result.ok).toBe(true);
+      expect(result.status).toBe(200);
+      expect(result.ok && result.data).toBeNull();
     });
 
     it("httpPostJSON sends Content-Type: application/json header by default", async () => {
@@ -282,15 +241,10 @@ describe("API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결�
         })
       );
 
-      // const result = await httpPostJSON(
-      //   "https://api.example.com/data",
-      //   { key: "value" }
-      // );
-      // Verify Content-Type header was set
-      // const fetchCall = mockFetch.mock.calls[0];
-      // expect(fetchCall[1]?.headers?.["Content-Type"]).toContain("application/json");
-
-      expect(mockFetch).not.toHaveBeenCalled();
+      await httpPostJSON("https://api.example.com/data", { key: "value" });
+      const fetchCall = mockFetch.mock.calls[0];
+      const headers = (fetchCall[1] as RequestInit)?.headers as Record<string, string>;
+      expect(headers?.["Content-Type"]).toContain("application/json");
     });
   });
 });
