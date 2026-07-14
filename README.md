@@ -1,3 +1,5 @@
+🇺🇸 [한국어](./README.ko.md)
+
 # FinancialVocabQuiz
 
 앱인토스 (Vite + React + TDS) ETF, DSR, CPI 등 금융 용어를 매일 3문제 퀴즈로 익히고 금융 IQ 점수를 쌓는 일일 금융 퀴즈 토스로 투자하는 MZ세대가 ETF, 기준금리, DSR, PBR 같은 용어를 정확히 모른 채 투자한다. 배우고 싶지만 검색은 귀찮고 책은 어렵다.
