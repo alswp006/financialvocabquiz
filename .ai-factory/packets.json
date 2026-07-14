@@ -1,0 +1,554 @@
+[
+  {
+    "id": "0001",
+    "title": "v2 스키마 TypeScript 타입 + RouteState 계약 고정",
+    "epic": "Epic 1 (Data layer)",
+    "task": {
+      "description": "SPEC v2의 모든 엔터티/스토어/유니크키/리더보드 API DTO 타입과 페이지 간 navigate state 계약(RouteState)을 단일 파일로 고정한다. 런타임 코드는 금지하고, 이후 모든 레이어가 이 타입만 import하도록 기반을 만든다.",
+      "acceptance_criteria": [
+        "src/lib/types.ts가 SPEC에 명시된 export 목록(공통/엔터티/스토어·키/API DTO/RouteState)을 모두 포함하고 이름이 정확히 일치한다",
+        "RouteState가 지정된 6개 경로 키(\"/\", \"/quiz\", \"/result\", \"/review\", \"/leaderboard\", \"/settings\")를 포함하며, 각 value 타입이 SPEC와 동일하다",
+        "파일 내에 함수/상수 등 런타임 코드가 없고(type/interface/export type만 존재), tsc 에러가 0개다"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/lib/types.ts"
+    ],
+    "definition_of_done": [
+      "Type-only 파일로 유지(런타임 0)",
+      "tsc 통과",
+      "RouteState를 이후 페이지에서 재사용 가능"
+    ],
+    "depends_on": [],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "해당 없음(타입 정의만)."
+  },
+  {
+    "id": "0002",
+    "title": "시간/ID 유틸 + 퀴즈뱅크 런타임 인덱스 + 세션 생성(결정적 3문항)",
+    "epic": "Epic 1 (Data layer)",
+    "task": {
+      "description": "로컬 기준 dateISO/주차 weekId/nowISO/createId 순수 유틸을 만들고, 번들 문제은행을 O(1) 조회 가능한 byId 및 난이도별 byDifficulty로 인덱싱한다. 동일 입력(clientId/date/difficulty)에서 항상 동일 3문항을 뽑아 DailyQuizSession을 생성한다.",
+      "acceptance_criteria": [
+        "getLocalDateISO(now?)가 로컬 타임존 기준 \"YYYY-MM-DD\"를 반환하고, getISOWeekId(date)가 \"YYYY-WW\"(WW 2자리) 형식 문자열을 반환한다",
+        "getQuizBankIndex()가 {byId, byDifficulty}를 반환하며 byId[id]로 O(1) 조회가 가능하고, 중복 id가 있어도 throw 없이 마지막 값이 반영된다",
+        "createDailyQuizSession(...) 결과가 (1) id가 빈 문자열이 아니고 (2) sessionId===id (3) status:\"IN_PROGRESS\" 및 completedAtISO===undefined (4) questionIds 길이 3을 만족한다"
+      ]
+    },
+    "covers": [
+      "F1-AC1",
+      "F1-AC2",
+      "F1-AC3",
+      "F6-AC5",
+      "F2-AC4"
+    ],
+    "files": [
+      "src/lib/time.ts",
+      "src/lib/id.ts",
+      "src/lib/quizBank/index.ts",
+      "src/lib/quiz/sessionFactory.ts"
+    ],
+    "definition_of_done": [
+      "모든 함수가 throw/console.error 없이 동작",
+      "tsc 통과",
+      "세션 생성이 결정적(deterministic)"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "해당 없음(유틸/인덱스/세션 팩토리만)."
+  },
+  {
+    "id": "0003",
+    "title": "localStorage v2 저장소: safeStorage + UserProgress/DailySessions/WrongAnswers/LeaderboardCache CRUD",
+    "epic": "Epic 1 (Data layer)",
+    "task": {
+      "description": "localStorage JSON 파손/QuotaExceeded를 구분해 결과값으로 반환하는 safeStorage를 만들고, SPEC v2의 UNIQUE/인덱스 구조(byUniqueKey)를 강제하는 CRUD를 구현한다. reset 시 캐스케이드 삭제 규칙도 여기에서 제공한다.",
+      "acceptance_criteria": [
+        "safeGetJSON/safeSetJSON/safeRemove가 어떤 예외도 throw하지 않고, JSON 파손은 {ok:false,error:\"CORRUPTED\"}, QuotaExceeded는 {ok:false,error:\"QUOTA_EXCEEDED\"}로 구분 반환한다",
+        "DailySessions는 uniqueKey(\"${clientId}:${dateISO}:${difficulty}\")로만 저장/조회되며 동일 key에 항상 1개만 존재하고, findSessionBySessionId는 스캔해 없으면 null을 반환한다",
+        "WrongAnswers는 (clientId,questionId) UNIQUE가 object key로 보장되고, 200개 초과 시 lastWrongAtISO가 가장 오래된 항목부터 제거되어 정확히 200개 이하로 유지된다"
+      ]
+    },
+    "covers": [
+      "F1-AC4",
+      "F3-AC4",
+      "F2-AC2",
+      "F5",
+      "F7-AC-NEW-1",
+      "F7-AC-NEW-2",
+      "F6-AC3",
+      "F6-AC4"
+    ],
+    "files": [
+      "src/lib/storage/safeStorage.ts",
+      "src/lib/storage/userProgress.ts",
+      "src/lib/storage/dailySessions.ts",
+      "src/lib/storage/wrongAnswers.ts",
+      "src/lib/storage/leaderboardCache.ts"
+    ],
+    "definition_of_done": [
+      "localStorage 키가 SPEC(v2)와 일치",
+      "throw/console.error 0회",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0001",
+      "0002"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "해당 없음(스토리지 레이어)."
+  },
+  {
+    "id": "0004",
+    "title": "AppStore(Context): 부트스트랩/복구 감지 + 오늘 세션 시작/답안 기록/완료 처리",
+    "epic": "Epic 1 (Data layer)",
+    "task": {
+      "description": "Context 기반 AppStoreProvider/useAppStore를 구현해 앱 시작 시 UserProgress 로드/파손 감지 상태를 제공한다. 오늘 세션은 UNIQUE 재사용/생성하며, 답안 중복 탭을 방지하고 오답 누적/세션 COMPLETED 저장/iqTotal·streak 갱신까지 한 곳에서 처리한다.",
+      "acceptance_criteria": [
+        "AppStoreProvider와 useAppStore()가 export되고, Provider로 감싼 앱에서 초기 부트스트랩 후 userProgress가 존재하거나 needsRecoveryDialog=true 상태가 제공된다",
+        "startTodaySession(difficulty)가 (1) 기존 UNIQUE 세션이 있으면 재사용 (2) 없으면 생성 후 저장하며, 저장이 QUOTA_EXCEEDED면 quotaExceededForSession=true로 세팅하고 세션을 메모리에서만 유지한다",
+        "answerQuestion(questionId,selectedIndex)가 같은 questionId에 대해 2회 호출되어도 answers 배열에 해당 questionId가 1개만 기록되고, 오답이면 wrongAnswers 스토어가 UNIQUE로 갱신된다"
+      ]
+    },
+    "covers": [
+      "F1-AC1",
+      "F1-AC2",
+      "F2-AC1",
+      "F2-AC3",
+      "F4",
+      "F3-AC1"
+    ],
+    "files": [
+      "src/store/AppStore.tsx"
+    ],
+    "definition_of_done": [
+      "Provider/Hook 단일 진입점 제공",
+      "중복답안 방지 로직 포함",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0003",
+      "0002",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "해당 없음(상태관리)."
+  },
+  {
+    "id": "0005",
+    "title": "API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결과 모델",
+    "epic": "Epic 2 (API routes)",
+    "task": {
+      "description": "외부 리더보드 서버 호출에 공통으로 사용할 fetch 래퍼를 구현한다. 네트워크/파싱 실패를 throw하지 않고 결과 객체로 반환하며, 헤더 기반 페이지네이션(X-Has-Next/X-Next-Cursor) 처리에 재사용 가능하게 만든다.",
+      "acceptance_criteria": [
+        "httpGetJSON/httpPostJSON(또는 동등 함수)이 2xx/비2xx/네트워크 실패를 모두 throw 없이 {ok:boolean,status?:number} 형태로 반환한다",
+        "응답이 JSON이 아니거나 parse 실패해도 console.error 없이 {ok:false,error:\"PARSE_ERROR\"|\"NETWORK_ERROR\"|\"HTTP_ERROR\"} 등 명시적 코드로 반환한다",
+        "fetch 옵션에 mode:\"no-cors\"를 사용하지 않고, 호출자가 응답 헤더 값을 읽을 수 있도록 Headers를 함께 반환(또는 필요한 값 추출)한다"
+      ]
+    },
+    "covers": [
+      "F6-AC7"
+    ],
+    "files": [
+      "src/lib/api/http.ts"
+    ],
+    "definition_of_done": [
+      "throw 0회, console.error 0회",
+      "단위 사용 예시(주석) 없이도 타입만으로 사용 가능",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "해당 없음(API 유틸)."
+  },
+  {
+    "id": "0006",
+    "title": "리더보드 API 클라이언트(leaderboard.ts): GET 주간조회 + POST 제출",
+    "epic": "Epic 2 (API routes)",
+    "task": {
+      "description": "SPEC v2 계약에 맞춰 주간 랭킹 조회와 점수 제출을 수행하는 클라이언트를 구현한다. Base URL은 env로 주입하며, 성공 시 body와 페이지네이션 헤더를 파싱해 반환하고, 실패는 throw 없이 상태/에러코드를 리턴한다.",
+      "acceptance_criteria": [
+        "fetchWeeklyLeaderboard({weekId,limit,cursor})가 `${VITE_LEADERBOARD_BASE_URL}/leaderboard/weekly`로 GET 호출하고, 200이면 body.entries와 헤더 X-Has-Next/X-Next-Cursor를 파싱해 반환한다",
+        "submitWeeklyLeaderboard(req)가 POST `/leaderboard/weekly/submit`을 호출해 200이면 response.entry(id/createdAtISO/updatedAtISO 포함)와 rank를 반환한다",
+        "어떤 실패 경로에서도 throw/console.error가 없고, mode:\"no-cors\"를 사용하지 않는다"
+      ]
+    },
+    "covers": [
+      "F6-AC1",
+      "F6-AC5",
+      "F6-AC7"
+    ],
+    "files": [
+      "src/lib/api/leaderboard.ts"
+    ],
+    "definition_of_done": [
+      "env base url 미설정 시에도 앱 크래시 없이 {ok:false} 반환",
+      "tsc 통과",
+      "API DTO 타입(types.ts)와 호환"
+    ],
+    "depends_on": [
+      "0005",
+      "0001"
+    ],
+    "db_schema": "External server tables(계약): clients(id PK, client_id UNIQUE, created_at_iso, updated_at_iso), weekly_leaderboard_entries(id PK, week_id, client_id FK->clients.client_id ON DELETE CASCADE, nickname, weekly_iq_delta, rank, created_at_iso, updated_at_iso), UNIQUE(week_id, client_id)",
+    "api_contract": "GET /leaderboard/weekly?weekId&limit&cursor → 200 {entries: WeeklyLeaderboardEntry[]} + headers X-Has-Next, X-Next-Cursor | errors {error:{code,message}}\nPOST /leaderboard/weekly/submit {weekId,clientId,nickname,weeklyIqDelta} → 200 {entry: WeeklyLeaderboardEntry, rank:number} | errors",
+    "dependencies": [],
+    "ui_requirements": "해당 없음(API 클라이언트)."
+  },
+  {
+    "id": "0007",
+    "title": "VirtualList 공용 컴포넌트(react-window) + 50+ 목록 가상 스크롤 기반",
+    "epic": "Epic 3 (UI pages)",
+    "task": {
+      "description": "50개 초과 리스트에서 가상 스크롤을 적용하기 위한 공용 VirtualList 래퍼를 만든다. 모바일 화면에서 터치 타깃 44px을 만족하도록 itemSize 기준을 제시하고, 외부 스타일 최소화(레이아웃 flex 정도만)로 페이지들이 쉽게 사용하게 한다.",
+      "acceptance_criteria": [
+        "react-window를 사용해 VirtualList가 itemCount, itemSize, renderItem을 props로 받아 렌더링하며, 스크롤이 가능한 컨테이너 안에서 동작한다",
+        "아이템 높이(itemSize)가 최소 44px 이상으로 사용되도록 기본값 또는 사용 가이드(타입/주석)로 강제한다",
+        "컴포넌트는 TDS 여백을 덮어쓰는 인라인 padding/margin을 추가하지 않고(레이아웃용 flex/height 정도만), tsc 에러가 0개다"
+      ]
+    },
+    "covers": [
+      "F5",
+      "F6-AC1"
+    ],
+    "files": [
+      "src/components/VirtualList.tsx"
+    ],
+    "definition_of_done": [
+      "패키지 의존성 react-window 추가(빌드 가능)",
+      "기본 사용 예가 최소 1곳(후속 페이지)에서 가능",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [
+      "react-window"
+    ],
+    "ui_requirements": "TDS 컴포넌트 직접 사용 없음(래퍼). 페이지에서 ListRow로 아이템을 구성하고, VirtualList는 렌더링/스크롤만 담당."
+  },
+  {
+    "id": "0008",
+    "title": "홈(/) 페이지: 난이도 선택 + 시작 로딩 + 문제 부족 차단 + 복구 다이얼로그",
+    "epic": "Epic 3 (UI pages)",
+    "task": {
+      "description": "홈에서 난이도를 선택하고 오늘의 퀴즈를 시작한다. 문제은행이 3문항 미만이면 시작을 막고 안내한다. UserProgress JSON 파손 등 needsRecoveryDialog 상태면 복구 안내 다이얼로그를 표시하고 설정/초기화로 유도한다.",
+      "acceptance_criteria": [
+        "난이도(초급/중급/고급) 선택 후 ‘오늘 퀴즈 시작’ 버튼을 누르면 startTodaySession이 호출되고 성공 시 navigate('/quiz', {state:{difficulty}})가 실행된다",
+        "선택 난이도의 문제 풀(pool) 길이가 3 미만이면 시작 버튼이 disabled이고, 화면에 차단 안내 텍스트가 노출된다",
+        "needsRecoveryDialog=true이면 AlertDialog가 자동으로 열리고, ‘닫기’ 버튼과 ‘데이터 초기화로 복구’ CTA가 존재한다(닫기 라벨은 반드시 ‘닫기’)"
+      ]
+    },
+    "covers": [
+      "F1-AC3",
+      "F1-AC5"
+    ],
+    "files": [
+      "src/pages/Home.tsx"
+    ],
+    "definition_of_done": [
+      "TDS 컴포넌트만 사용(여백은 Spacing만)",
+      "RouteState 계약 준수",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0004",
+      "0002",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "사용 컴포넌트: TDS Top, Typography/Paragraph.Text, Chip(난이도 선택), Button(시작), AlertDialog(복구 안내), Toast(선택적), Spacing.\n레이아웃: Top(타이틀 ‘금융 퀴즈’) → 난이도 섹션(Chip 3개 단일 선택) → 안내 텍스트(오늘 3문제) → CTA Button.\n상태: loading(startTodaySession 진행 중 Button loading), insufficientQuestions(버튼 disabled + 안내), recoveryDialog(open/close).\n인터랙션: 난이도 선택 시 tickWeak 햅틱, 시작 성공 시 success 햅틱(후속 패킷에서 적용 가능)."
+  },
+  {
+    "id": "0009",
+    "title": "퀴즈(/quiz) 페이지: 4지선다 진행 + 중복 탭 방지 + 문항 누락 에러 처리",
+    "epic": "Epic 3 (UI pages)",
+    "task": {
+      "description": "선택한 난이도의 오늘 세션을 로드/생성해 3문항을 순서대로 진행한다. 보기는 4개 고정으로 선택 즉시 답안을 기록하고 다음 문항으로 이동한다. 중복 탭으로 동일 문항 답안이 2회 기록되지 않도록 UI/스토어 둘 다에서 막는다.",
+      "acceptance_criteria": [
+        "각 문항에서 보기 4개가 항상 렌더링되며, 사용자가 보기 1개를 누르면 answerQuestion이 1회만 호출되고 다음 문항으로 이동한다(동일 문항에서 빠른 2회 탭해도 answers에 1개만 추가)",
+        "현재 문항의 questionId가 퀴즈뱅크 byId에 없으면 에러 상태 UI가 표시되고(‘문제를 불러오지 못했어요’), ‘홈으로’ 버튼으로 navigate('/')할 수 있다",
+        "3문항 답안을 모두 기록하면 세션이 COMPLETED로 저장된 뒤 navigate('/result', {state:{sessionId}})가 실행된다"
+      ]
+    },
+    "covers": [
+      "F2-AC1",
+      "F2-AC3",
+      "F2-AC4",
+      "F2-AC5",
+      "F3-AC1"
+    ],
+    "files": [
+      "src/pages/Quiz.tsx"
+    ],
+    "definition_of_done": [
+      "TDS만 사용, Spacing으로만 간격",
+      "문항 전환 시 스크롤/포커스 안정적(입력 없음)",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0008",
+      "0004",
+      "0002",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "사용 컴포넌트: TDS Top, Progress(대체로 Typography로 ‘1/3’ 표기), ListRow(보기 4개), Button(에러 복귀), Skeleton(로딩), Toast(선택적), Spacing.\n레이아웃: Top(뒤로) → 문항 번호/용어(term) → prompt 텍스트 → 보기 리스트(ListRow 4개, 각 row 전체가 탭 가능) → 하단 현재 상태.\n상태: loading(세션 시작 중 Skeleton), inProgress(선택 가능), locked(선택 직후 300ms 정도 재탭 방지), errorMissingQuestion.\n접근성/터치: ListRow 높이 44px 이상, 선택 후 즉시 disabled 처리."
+  },
+  {
+    "id": "0010",
+    "title": "결과(/result) 페이지: 요약 + 보상형 광고 게이트 해설 + 랭킹 제출(닉네임 가드)",
+    "epic": "Epic 3 (UI pages)",
+    "task": {
+      "description": "COMPLETED 세션의 정답 개수/획득 IQ를 요약하고, 해설은 TossRewardAd 게이트 통과 후에만 노출한다. 주간 점수 제출 버튼은 닉네임 미설정 시 차단하고 설정으로 이동시키며, 잘못된 sessionId로 진입하면 오류 상태로 처리한다.",
+      "acceptance_criteria": [
+        "RouteState로 전달된 sessionId로 세션을 찾지 못하면 에러 UI(‘결과를 찾지 못했어요’)가 표시되고 ‘홈으로’ 버튼이 있다",
+        "세션 status가 COMPLETED일 때만 결과 요약이 표시되며, 해설 영역은 TossRewardAd로 감싸져 광고 완료 전에는 해설 텍스트가 렌더링되지 않는다(광고 실패/취소 시에도 비공개 유지)",
+        "‘주간 랭킹에 반영하기’ 버튼을 누를 때 userProgress.nickname이 2~10자를 만족하지 않으면 제출을 호출하지 않고 AlertDialog로 안내 후 ‘설정으로 이동’ 버튼이 제공된다"
+      ]
+    },
+    "covers": [
+      "F3-AC2",
+      "F3-AC3",
+      "F3-AC4",
+      "F3-AC5",
+      "F6-AC5",
+      "F6-AC6"
+    ],
+    "files": [
+      "src/pages/Result.tsx"
+    ],
+    "definition_of_done": [
+      "Reward ad 게이트가 payoff(해설)만 감쌈",
+      "잘못된 sessionId 방어",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0009",
+      "0006",
+      "0004",
+      "0002",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "사용 컴포넌트: TDS Top, Typography/Paragraph.Text, Button(랭킹 제출/복귀), AlertDialog(닉네임 가드), Toast(제출 성공/실패), Spacing. 보상형 게이트: 프로젝트 제공 TossRewardAd 사용.\n레이아웃: Top → 요약 카드(정답 n/3, IQ +delta) → 버튼(랭킹 반영) → ‘해설 보기’ 섹션(게이트 내부에 각 문항 explanation 표시).\n상태: loading(세션 조회 중), errorInvalidSession, submitLoading, submitSuccess Toast.\n정책: Dialog 왼쪽 버튼은 ‘닫기’."
+  },
+  {
+    "id": "0011",
+    "title": "복습(/review) 페이지: 오답 목록 + 빈 상태 + 50개 초과 VirtualList 가상 스크롤 + 상세 BottomSheet",
+    "epic": "Epic 3 (UI pages)",
+    "task": {
+      "description": "현재 clientId의 WrongAnswerItem만 필터링해 오답 목록을 보여준다. 50개 초과 시 VirtualList(react-window)로 가상 스크롤을 적용한다. 항목을 탭하면 BottomSheet로 문제/보기/정답/해설을 보여주고, 데이터가 없으면 빈 상태 CTA를 제공한다.",
+      "acceptance_criteria": [
+        "listWrongAnswersForClient 결과가 0개면 빈 상태(아이콘+텍스트)와 ‘오늘 퀴즈 하러가기’ 버튼이 표시되어 navigate('/')가 동작한다",
+        "오답 개수가 50개 초과일 때 VirtualList가 사용되고, 50개 이하일 때는 일반 리스트(ListRow 반복)로 렌더링된다",
+        "리스트 항목을 탭하면 BottomSheet가 열리고, 해당 questionId의 prompt/choices 4개/정답(정답 보기 텍스트)/explanation이 모두 표시된다(질문ID가 없으면 BottomSheet 대신 Toast로 오류 안내)"
+      ]
+    },
+    "covers": [
+      "F5",
+      "F2-AC4"
+    ],
+    "files": [
+      "src/pages/Review.tsx"
+    ],
+    "definition_of_done": [
+      "clientId 필터링 보장",
+      "가상 스크롤 적용 기준(>50) 준수",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0010",
+      "0007",
+      "0004",
+      "0002",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "사용 컴포넌트: TDS Top, ListRow(오답 항목), BottomSheet(상세), Button(CTA), Typography/Paragraph.Text, Asset.ContentIcon(빈 상태), Toast, Spacing.\n레이아웃: Top → 오답 개수 헤더 → 리스트(<=50: map, >50: VirtualList) → BottomSheet(선택 항목 상세).\n상태: empty, list, sheetOpen, missingQuestion Toast.\n터치: ListRow 전체 탭 가능, 최소 44px."
+  },
+  {
+    "id": "0012",
+    "title": "주간 랭킹(/leaderboard) 페이지: Toss 로그인 통합 가드 + 로딩/캐시 폴백/빈상태 + 재시도 + 가상 스크롤",
+    "epic": "Epic 3 (UI pages)",
+    "task": {
+      "description": "getIsTossLoginIntegratedService()로 로그인 통합 여부를 확인해 미통합이면 접근을 차단한다. 주간 랭킹을 로딩하고 실패 시 localStorage 캐시로 폴백하며, 캐시도 없으면 빈 상태를 보여준다. 엔트리 50개 초과 시 VirtualList로 렌더링한다.",
+      "acceptance_criteria": [
+        "getIsTossLoginIntegratedService() 결과가 false이면 랭킹 리스트를 호출하지 않고 차단 UI(‘랭킹을 보려면 토스 로그인 연동이 필요해요’)와 ‘닫기’/‘홈으로’ 버튼이 표시된다",
+        "네트워크 로딩 실패 시 weekId 캐시가 있으면 캐시 entries로 리스트를 렌더링하고, 캐시가 없으면 빈 상태 UI와 ‘다시 시도’ 버튼이 표시된다",
+        "로딩 중에는 Skeleton(또는 로딩 텍스트)이 표시되고, entries가 50개 초과면 VirtualList를 사용한다"
+      ]
+    },
+    "covers": [
+      "F6-AC1",
+      "F6-AC2",
+      "F6-AC3",
+      "F6-AC4",
+      "F6-AC8"
+    ],
+    "files": [
+      "src/pages/Leaderboard.tsx"
+    ],
+    "definition_of_done": [
+      "로그인 통합 가드 적용",
+      "캐시 폴백/빈 상태 분기 명확",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0011",
+      "0006",
+      "0003",
+      "0007",
+      "0002",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "사용 컴포넌트: TDS Top, ListRow(랭킹 행: rank/nickname/weeklyIqDelta), Button(재시도/이동), Skeleton, Asset.ContentIcon(빈 상태), Typography/Paragraph.Text, Spacing.\n레이아웃: Top → 이번 주(weekId) 표기 → 리스트(<=50 일반, >50 VirtualList) → 에러/빈 상태 시 CTA.\n상태: guarded(차단), loading, success, errorWithCache, empty.\n문구: 토스 보이스톤(해요체), Dialog 왼쪽 ‘닫기’."
+  },
+  {
+    "id": "0013",
+    "title": "설정(/settings) 페이지: 닉네임 저장 검증(2~10자) + 데이터 초기화(캐스케이드)",
+    "epic": "Epic 3 (UI pages)",
+    "task": {
+      "description": "닉네임을 2~10자 제약으로 저장하고, 위반 시 저장을 차단하며 TextField error 상태를 노출한다. ‘데이터 초기화’는 AlertDialog로 재확인 후 실행하며, 실행 시 UserProgress 재생성과 함께 세션/오답/캐시 키들이 모두 삭제되는 캐스케이드 규칙을 따른다.",
+      "acceptance_criteria": [
+        "닉네임 입력 후 저장을 누를 때 trim 길이가 2~10이 아니면 저장 함수가 호출되지 않고 TextField가 error 상태(에러 문구 포함)로 표시된다",
+        "유효 닉네임 저장 성공 시 Toast로 ‘저장했어요’가 표시되고, userProgress.updatedAtISO가 이전 값과 달라진다",
+        "‘데이터 초기화’ 버튼을 누르면 AlertDialog가 열리고, 확인을 누르면 fvq_user_progress_v2/fvq_daily_sessions_v2/fvq_wrong_answers_v2/fvq_leaderboard_cache_v2가 삭제된 뒤 새 UserProgress가 생성된다"
+      ]
+    },
+    "covers": [
+      "F7-AC-NEW-1",
+      "F7-AC-NEW-2"
+    ],
+    "files": [
+      "src/pages/Settings.tsx"
+    ],
+    "definition_of_done": [
+      "검증/다이얼로그 버튼 라벨 규칙 준수",
+      "캐스케이드 삭제 포함",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0012",
+      "0004",
+      "0003",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "사용 컴포넌트: TDS Top, TextField(닉네임), Button(저장/초기화), AlertDialog(초기화 확인), Toast, Typography/Paragraph.Text, Spacing.\n레이아웃: Top → 닉네임 섹션(TextField + 저장 버튼) → 구분 텍스트 → 위험 영역(데이터 초기화 버튼).\n상태: validationError(TextField error), saving(버튼 loading), resetConfirm(dialog open).\n정책: AlertDialog 왼쪽 버튼 ‘닫기’."
+  },
+  {
+    "id": "0014",
+    "title": "Router wiring: App.tsx에 Provider/Routes/FloatingTabBar 연결(광고 제외)",
+    "epic": "Epic 4 (Integration)",
+    "task": {
+      "description": "react-router-dom 라우트를 RouteState 계약에 맞게 연결하고, AppStoreProvider를 전역으로 장착한다. 메인 하단 탭은 템플릿 제공 FloatingTabBar로 홈/복습/랭킹/설정 이동을 제공한다. 이 패킷에서는 광고/결제는 넣지 않는다.",
+      "acceptance_criteria": [
+        "App.tsx에서 6개 경로(\"/\",\"/quiz\",\"/result\",\"/review\",\"/leaderboard\",\"/settings\")가 모두 라우팅되고 각 페이지 컴포넌트가 렌더링된다",
+        "FloatingTabBar가 최소 4탭(홈/복습/랭킹/설정)으로 표시되고, 탭 전환 시 해당 route로 navigate된다",
+        "AppStoreProvider가 Router 내부 최상단에 장착되어 모든 페이지에서 useAppStore 호출 시 크래시가 없다"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/App.tsx"
+    ],
+    "definition_of_done": [
+      "main.tsx 수정 없음",
+      "라우팅 누락 0",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0013"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "템플릿 제공 FloatingTabBar 사용(고정 하단). 고정 하단 요소에는 safe-area 고려 paddingBottom: 'calc(Npx + env(safe-area-inset-bottom))' 적용. TDS 여백은 Spacing만."
+  },
+  {
+    "id": "0015",
+    "title": "Integration polish: 배너 광고 배치(겹침 금지) + 전역 UX 마감(스크롤/세이프에어리어)",
+    "epic": "Epic 4 (Integration)",
+    "task": {
+      "description": "App 레벨에서 라우트별로 배너 광고를 비침투적으로 배치하고(겹침 배치 금지), 하단 탭/콘텐츠가 safe-area와 겹치지 않도록 레이아웃을 마감한다. 앱 전역에서 외부 링크 이동/console.error가 추가되지 않도록 최종 점검한다.",
+      "acceptance_criteria": [
+        "Home 및 Leaderboard 경로에서만 <AdSlot adGroupId={env}> 배너가 표시되고, Quiz/Result/Review/Settings에서는 표시되지 않는다",
+        "배너/탭바가 콘텐츠를 가리지 않도록 App 레이아웃에 safe-area 하단 여백이 적용되어, 스크롤 최하단에서도 마지막 ListRow/Button가 탭 가능하다(가려짐 없음)",
+        "App.tsx 변경으로 console.error 호출이 새로 추가되지 않고, window.open/location.href 등 외부 도메인 이탈 코드가 없다"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/App.tsx"
+    ],
+    "definition_of_done": [
+      "광고는 템플릿 AdSlot만 사용",
+      "겹침 배치 금지(배너+탭바 레이아웃 분리)",
+      "tsc 통과"
+    ],
+    "depends_on": [
+      "0014"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "템플릿 제공 AdSlot 사용. 배너는 콘텐츠 섹션 사이 또는 하단(탭바 위) 1곳에만 배치. 레이아웃은 최소 커스텀 CSS(flex/height)만 허용, padding/margin은 TDS Spacing만 사용."
+  },
+  {
+    "id": "0016",
+    "title": "라우팅 와이어링 + Provider 연결 + 통합 폴리시",
+    "epic": "4",
+    "task": {
+      "description": "App.tsx에 모든 페이지(Home.tsx, Quiz.tsx, Result.tsx, Review.tsx, Leaderboard.tsx, Settings.tsx) Route 연결, main.tsx 수정 금지(@AI:ANCHOR), 광고/결제 연동, 최종 UX 폴리시",
+      "acceptance_criteria": [
+        "App.tsx에 모든 페이지 Route가 정의되어 있다",
+        "모든 navigate() 대상에 Route가 존재한다",
+        "main.tsx의 TDSMobileAITProvider/BrowserRouter가 유지되어 있다",
+        "앱이 '/' 경로에서 정상 렌더링된다"
+      ]
+    },
+    "files": [
+      "src/App.tsx"
+    ],
+    "covers": [],
+    "definition_of_done": [
+      "typecheck pass",
+      "all routes accessible",
+      "no console errors"
+    ],
+    "depends_on": [
+      "0015"
+    ]
+  }
+]
