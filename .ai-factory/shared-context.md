@@ -185,6 +185,6 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 ## Already Implemented (do NOT duplicate or overwrite)
 - 0001: v2 스키마 TypeScript 타입 + RouteState 계약 고정 (files: src/lib/types.ts)
 - 0002: 시간/ID 유틸 + 퀴즈뱅크 런타임 인덱스 + 세션 생성(결정적 3문항) (files: src/lib/time.ts, src/lib/id.ts, src/lib/quizBank/index.ts, src/lib/quiz/sessionFactory.ts)
-- 0003: localStorage v2 저장소 — TDD 진행 중 (files: src/__tests__/packet-0003.test.ts, TODO: src/lib/storage/safeStorage.ts, dailySessions.ts, wrongAnswers.ts, leaderboardCache.ts, userProgress.ts)
 - 0005: API 공통 fetch 래퍼(http.ts): JSON/헤더 파싱 + non-throw 결과 모델 (files: src/lib/api/http.ts)
 - 0007: VirtualList 공용 컴포넌트(react-window) + 50+ 목록 가상 스크롤 기반 (files: src/components/VirtualList.tsx)
+- 0003: localStorage v2 저장소: safeStorage + UserProgress/DailySessions/WrongAnswers/LeaderboardCache CRUD (files: src/lib/storage/safeStorage.ts, src/lib/storage/userProgress.ts, src/lib/storage/dailySessions.ts, src/lib/storage/wrongAnswers.ts, src/lib/storage/leaderboardCache.ts)
