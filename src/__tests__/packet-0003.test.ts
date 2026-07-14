@@ -108,9 +108,13 @@ describe("AC-1: safeStorage error handling", () => {
   it("safeSetJSON returns {ok:false,error:'QUOTA_EXCEEDED'} when storage quota is exceeded", () => {
     const { safeSetJSON } = require("@/lib/storage/safeStorage");
 
-    // Mock localStorage.setItem to throw QuotaExceededError
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = vi.fn(() => {
+    // Mock localStorage.setItem to throw QuotaExceededError.
+    // jsdom's Storage is a spec-compliant legacy platform object (Proxy) whose
+    // `set` trap forwards ANY string property assignment (including "setItem")
+    // to the internal setItem(key, value) as a stored string — so plain
+    // `localStorage.setItem = vi.fn(...)` is silently absorbed as a storage
+    // write instead of overriding the method. Spy on the prototype instead.
+    const spy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       const err = new Error("QuotaExceededError");
       err.name = "QuotaExceededError";
       throw err;
@@ -121,7 +125,7 @@ describe("AC-1: safeStorage error handling", () => {
     expect(result.ok).toBe(false);
     expect(result.error).toBe("QUOTA_EXCEEDED");
 
-    localStorage.setItem = originalSetItem;
+    spy.mockRestore();
   });
 
   it("safeSetJSON returns {ok:true} on successful write", () => {

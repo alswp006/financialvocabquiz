@@ -10,6 +10,30 @@
 
 import { beforeEach, afterEach, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
+import path from "node:path";
+import Module, { register } from "node:module";
+
+// ── CJS require("@/...") alias support ──
+// Some test files use Node's native require() (lazy-loaded modules for TDD red-phase
+// patterns) instead of static import. Native require() knows nothing about the Vite
+// "@/" -> "src/" alias or extension-less .ts resolution, so patch Node's own resolver
+// for the top-level require() call...
+const originalResolveFilename = (Module as unknown as { _resolveFilename: Function })
+  ._resolveFilename;
+(Module as unknown as { _resolveFilename: Function })._resolveFilename = function (
+  request: string,
+  ...rest: unknown[]
+) {
+  if (request.startsWith("@/")) {
+    const resolved = path.resolve(process.cwd(), "src", request.slice(2));
+    return originalResolveFilename.call(this, `${resolved}.ts`, ...rest);
+  }
+  return originalResolveFilename.call(this, request, ...rest);
+};
+// ...and register an ESM resolver hook for `import` statements *inside* those
+// natively-required .ts modules (Node's require(esm) support routes nested
+// imports through the real ESM resolver, not the CJS one patched above).
+register("./vitest.alias-loader.mjs", import.meta.url);
 
 // ── localStorage / sessionStorage isolation ──
 // jsdom's storage persists between tests by default. Clear it to prevent pollution.
